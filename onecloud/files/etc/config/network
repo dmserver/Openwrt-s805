@@ -1,0 +1,46 @@
+
+config interface 'loopback'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+	option device 'lo'
+
+config globals 'globals'
+	option packet_steering '1'
+	option ula_prefix 'fe88::/48'
+
+config interface 'lan'
+	option proto 'static'
+	option ipaddr '192.168.31.110'
+	option netmask '255.255.255.0'
+	option ip6assign '64'
+	option device 'br-lan'
+	option ip6ifaceid '::1'
+	list ip6class 'local'
+
+config interface 'docker'
+	option proto 'none'
+	option auto '0'
+	option device 'docker0'
+
+config device
+	option type 'bridge'
+	option name 'docker0'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth0'
+
+config interface 'wan'
+	option proto 'dhcp'
+	option device 'eth1'
+
+config interface 'wan6'
+	option proto 'dhcpv6'
+	option device 'eth1'
+	option reqaddress 'try'
+	option reqprefix 'auto'
+	option norelease '1'
+	option sourcefilter '0'
+

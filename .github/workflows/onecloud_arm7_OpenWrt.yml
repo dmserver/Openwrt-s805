@@ -1,0 +1,181 @@
+name: 将指定的IMAGES转换成直刷包
+
+on:
+  workflow_dispatch:
+    inputs:
+      burn_version:
+        description: "选择版本[0-迷你版 1-全版 2-其他]"
+        required: true
+        default: 1
+        type: choice
+        options:
+          - 0
+          - 1
+          - 2
+      free_disk:
+        description: "选择清理服务器[false-不用 true-清理]"
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+#权限
+permissions: write-all 
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_BRANCH: master
+  CONFIG_FILE: .config
+  DIY_P1_SH: op1.sh
+  DIY_P2_SH: op2.sh
+  DIY_P3_SH: op3.sh
+  UPLOAD_FIRMWARE: true
+  UPLOAD_RELEASE: true
+  OWRT_IP: 192.168.31.110
+  OWRT_NAME: OneCloud
+  OWRT_FILES: onecloud/files
+  OWRT_TYPE: 转化版
+  OWRT_burn_version: ${{inputs.burn_version}}
+  OWRT_free_disk: ${{inputs.free_disk}}
+  #USE_CACHEWRTBUILD: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build_burn_onecloud:
+    runs-on: ubuntu-22.04
+    
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+        
+    - name: 清理服务器空间(Ubuntu)
+      if: ${{inputs.free_disk}} == 'true'
+      uses: dmserver/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: true
+
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
+    - name: 项目检查
+      uses: actions/checkout@main        
+      
+    - name: 检查分配的服务器性能
+      run: |
+        echo "警告⚠"
+        echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+        echo -e "已知CPU型号（降序）：7763，8370C，8272CL，8171M，E5-2673 \n"
+        echo "--------------------------CPU信息--------------------------"
+        echo "CPU物理数量：$(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
+        echo -e "CPU核心信息：$(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c) \n"
+        echo "--------------------------内存信息--------------------------"
+        echo "已安装内存详细信息："
+        echo -e "$(sudo lshw -short -C memory | grep GiB) \n"
+        echo "--------------------------硬盘信息--------------------------"
+        echo "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT  
+        
+    - name: 编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(cat $GITHUB_WORKSPACE/Ubuntu-2204.txt)
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
+          sudo mkdir -p /workdir
+          sudo chown $USER:$GROUPS /workdir
+          echo "status=success" >> ${GITHUB_OUTPUT}
+          df -Th
+
+    - name: 初始化变量
+      run: |
+        echo "OWRT_burn_version=$OWRT_burn_version" >> $GITHUB_ENV
+        echo "OWRT_free_disk=$OWRT_free_disk" >> $GITHUB_ENV
+        
+    - name: 克隆源代码
+      working-directory: /workdir
+      run: |
+        df -hT $PWD
+        git clone $REPO_URL -b $REPO_BRANCH openwrt
+        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+
+    - name: 检查脚本
+      run: |
+        cd ./Scripts
+        
+        dos2unix ./*.sh
+        chmod +x ./*.sh        
+        
+    - name: 打包直刷包
+      run: |
+        if [[ "${{ env.OWRT_burn_version }}"  == "2" ]]; then
+          imgpath="https://github.com/dmserver/OneCloud_Op2/releases/download/OpenWrt_immortalwrt_26.07.12_04.38.06/immortalwrt-meson-meson8b-thunder-onecloud-ext4-emmc.img.gz"
+          $GITHUB_WORKSPACE/Scripts/convert.sh $imgpath
+        else
+          $GITHUB_WORKSPACE/Scripts/convert.sh ${{ env.OWRT_burn_version }}
+        fi
+
+    - name: 整理文件
+      id: organize
+      run: |
+        cd openwrt/upload
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+        
+        #信息
+        export OWRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        export OWRT_SOURCE=$(echo $REPO_URL | cut -d '/' -f 5-)
+        echo "OWRT_SOURCE=$OWRT_SOURCE" >> $GITHUB_ENV
+        echo "OWRT_DATE=$OWRT_DATE" >> $GITHUB_ENV
+        
+        if [[ ${{ inputs.burn_version }} == 0 ]]; then
+          echo "OWRT_TYPE=[hub docker迷你]" >> $GITHUB_ENV
+        elif [[ ${{ inputs.burn_version }} == 1 ]]; then
+          echo "OWRT_TYPE=[hub docker正常]" >> $GITHUB_ENV
+        else
+          echo "OWRT_TYPE=[自定义]" >> $GITHUB_ENV
+        fi
+  
+    - name: 上传直刷固件
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: OpenWrt_${{ env.OWRT_SOURCE }}_${{ env.OWRT_DATE }}
+        #name: ${{ env.CORE_NAME }}
+        body: |
+          自用玩客云${{ env.OWRT_TYPE }}直刷固件！使用双USB公头线刷机！
+          =============基本信息============
+
+          源码：${{env.OWRT_SOURCE}}
+          密码：password
+          地址：${{env.OWRT_IP}}
+        artifacts: ${{ env.FIRMWARE }}/*
+        
+    - name: 清理Releases
+      uses: dmserver/delete-older-releases@master
+      with:
+        keep_latest: 12
+        delete_tags: true
+
+    - name: 清理Workflows
+      uses: dmserver/delete-workflow-runs@main
+      with:
+        retain_days: 0
+        keep_minimum_runs: 1
+        

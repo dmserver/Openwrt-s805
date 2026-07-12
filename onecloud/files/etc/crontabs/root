@@ -1,0 +1,2 @@
+0 * * * * /etc/cn.sh
+0 * * * * /etc/gfw.sh
