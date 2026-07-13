@@ -99,8 +99,8 @@ jobs:
       - name: 最大化编译空间
         uses: dmserver/maximize-build-space@master
         with:
-          root-reserve-mb: 2048
-          swap-size-mb: 1024
+          root-reserve-mb: 4096
+          swap-size-mb: 2048
           build-mount-path: /workdir
           overprovision-lvm: 'true'
           remove-dotnet: 'true'

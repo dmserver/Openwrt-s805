@@ -16,22 +16,18 @@ if [ ! -d "./files/etc/config" ]; then
   mkdir -p ./files/etc/config
 fi
 
-# 使用正则表达式校验IP地址格式是否符合规范
-if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-	echo "玩客云IP地址 $ip 符合规范。"
-else
-	echo "玩客云IP地址 $ip 不符合规范。"
-	exit 1
-fi
 		  
-if [[ $ip_server =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-	echo "config interface 'loopback'
+if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+	echo "
+config interface 'loopback'
 	option proto 'static'
 	option ipaddr '127.0.0.1'
 	option netmask '255.0.0.0'
 	option device 'lo'
 
 config globals 'globals'
+	option packet_steering '1'
+	option ula_prefix 'fe88::/48'
 
 config interface 'lan'
 	option proto 'static'
@@ -39,17 +35,9 @@ config interface 'lan'
 	option netmask '255.255.255.0'
 	option ip6assign '64'
 	option device 'br-lan'
-	option gateway '$ip_server'
-	option delegate '0'
-	option ip6ifaceid 'eui64'
-	list dns '$ip'
-
-config interface 'utun'
-	option proto 'none'
-	option ifname 'utun'
-	option device 'utun'
-	option auto '0'
-
+	option ip6ifaceid '::1'
+	list ip6class 'local'
+	
 config interface 'docker'
 	option proto 'none'
 	option auto '0'
@@ -63,9 +51,22 @@ config device
 	option name 'br-lan'
 	option type 'bridge'
 	list ports 'eth0'
+
+config interface 'wan'
+	option proto 'dhcp'
+	option device 'eth1'
+
+config interface 'wan6'
+	option proto 'dhcpv6'
+	option device 'eth1'
+	option reqaddress 'try'
+	option reqprefix 'auto'
+	option norelease '1'
+	option sourcefilter '0'
+
 ">files/etc/config/network
 else
-	echo "主路由IP地址 $ip 不符合规范。"
+	echo "玩客云IP地址 $ip 不符合规范。"
 	exit 1
 fi
 
