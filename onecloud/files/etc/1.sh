@@ -5,6 +5,9 @@ echo "# Put your custom commands here that should be executed once
 #mount -o remount rw /
 #/usr/sbin/balethirq.pl
 #alias reboot='reboot -f'
+/etc/init.d/dnsmasq start
+/etc/init.d/dnsmasq restart
+/etc/init.d/dnsmasq reload
 sh /etc/diymo.sh
 exit 0">/etc/rc.local
 

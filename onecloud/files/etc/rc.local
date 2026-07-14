@@ -1,6 +1,8 @@
 # Put your custom commands here that should be executed once
 # the system init finished. By default this file does nothing.
-
+/etc/init.d/dnsmasq start
+/etc/init.d/dnsmasq restart
+/etc/init.d/dnsmasq reload
 mount -o remount rw /
 resize2fs /dev/mmcblk1p2
 sh  /etc/1.sh

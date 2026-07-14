@@ -6,9 +6,12 @@ config system
 	option ttylogin '0'
 	option log_size '64'
 	option urandom_seed '0'
+	option log_proto 'udp'
+	option conloglevel '8'
+	option cronloglevel '7'
+	option zram_comp_algo 'lzo'
 
 config timeserver 'ntp'
-	option enabled '1'
 	option enable_server '1'
 	list server 'ntp.tencent.com'
 	list server 'ntp1.aliyun.com'
