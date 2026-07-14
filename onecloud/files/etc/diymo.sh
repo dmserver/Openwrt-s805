@@ -3,6 +3,5 @@ if [ ! -d "/var/run/homeproxy" ]; then
   mkdir /var/run/homeproxy
 fi
 
-/etc/init.d/kodexplorer restart
 /etc/init.d/ttyd restart
 /etc/init.d/homeproxy restart

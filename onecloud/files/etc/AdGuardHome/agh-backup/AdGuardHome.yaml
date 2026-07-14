@@ -2,27 +2,20 @@ http:
   pprof:
     port: 6060
     enabled: false
-  doh:
-    routes:
-      - GET /dns-query
-      - POST /dns-query
-      - GET /dns-query/{ClientID}
-      - POST /dns-query/{ClientID}
-    insecure_enabled: false
-  address: 0.0.0.0:80
-  session_ttl: 30d
+  address: 0.0.0.0:3002
+  session_ttl: 1h
 users:
   - name: admin
-    password: $2a$10$ol9cnA/ovlG6QKuCEIoJM.FIY3a9Zgyg4BpoQLjuUKOkpOhwIYZ/C
+    password: $2a$05$wM2AkeS4bYWVlcnflc3ye.Jl9gnyzvNMdeYIUZPfdASU6XVb753F.
 auth_attempts: 5
 block_auth_min: 15
 http_proxy: ""
-language: zh-cn
-theme: dark
+language: ""
+theme: auto
 dns:
   bind_hosts:
     - 0.0.0.0
-  port: 53
+  port: 5335
   anonymize_client_ip: false
   ratelimit: 0
   ratelimit_subnet_len_ipv4: 24
@@ -30,12 +23,17 @@ dns:
   ratelimit_whitelist: []
   refuse_any: true
   upstream_dns:
-    - 127.0.0.1:540
+    - 127.0.0.1:530
   upstream_dns_file: ""
   bootstrap_dns:
-    - 127.0.0.1:540
+    - 127.0.0.1:530
   fallback_dns:
-    - 127.0.0.1:540
+    - 127.0.0.1:530
+    - 223.5.5.5
+    - 114.114.114.114
+    - 180.76.76.76
+    - 1.1.1.1
+    - 8.8.4.4
   upstream_mode: load_balance
   fastest_timeout: 1s
   allowed_clients: []
@@ -47,13 +45,10 @@ dns:
   trusted_proxies:
     - 127.0.0.0/8
     - ::1/128
-  cache_enabled: false
   cache_size: 4194304
   cache_ttl_min: 0
   cache_ttl_max: 0
   cache_optimistic: false
-  cache_optimistic_answer_ttl: 30s
-  cache_optimistic_max_age: 12h
   bogus_nxdomain: []
   aaaa_disabled: false
   enable_dnssec: true
@@ -76,8 +71,6 @@ dns:
   use_http3_upstreams: false
   serve_plain_dns: true
   hostsfile_enabled: true
-  pending_requests:
-    enabled: true
 tls:
   enabled: false
   server_name: ""
@@ -87,6 +80,7 @@ tls:
   port_dns_over_quic: 853
   port_dnscrypt: 0
   dnscrypt_config_file: ""
+  allow_unencrypted_doh: false
   certificate_chain: ""
   private_key: ""
   certificate_path: ""
@@ -95,23 +89,21 @@ tls:
 querylog:
   dir_path: ""
   ignored: []
-  interval: 7d
+  interval: 2160h
   size_memory: 1000
   enabled: true
-  ignored_enabled: false
   file_enabled: true
 statistics:
   dir_path: ""
   ignored: []
-  interval: 7d
+  interval: 2160h
   enabled: true
-  ignored_enabled: false
 filters:
   - enabled: true
     url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
     name: AdGuard DNS filter
     id: 1
-  - enabled: false
+  - enabled: true
     url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt
     name: AdAway Default Blocklist
     id: 2
@@ -203,8 +195,48 @@ filters:
     url: https://raw.githubusercontent.com/217heidai/adblockfilters/main/rules/adblockdns.txt
     name: AdBlock DNS
     id: 1779500478
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_29.txt
+    name: 'CHN: AdRules DNS List'
+    id: 1781090401
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_21.txt
+    name: 'CHN: anti-AD'
+    id: 1781090402
 whitelist_filters: []
-user_rules: []
+user_rules:
+  - '@@||000491b06a.com^$important'
+  - '@@||maotaizy.cc^'
+  - '@@||lziapi.com^'
+  - '@@||sdzyapi.com^'
+  - '@@||apibdzy.com^'
+  - '@@||wwzy.tv^'
+  - '@@||rycjapi.com^'
+  - '@@||dbzy.tv^'
+  - '@@||maoyanapi.top^'
+  - '@@||iqiyizyapi.com^'
+  - '@@||wolongzyw.com^'
+  - '@@||guangsuapi.com^'
+  - '@@||fenwe078.cf^'
+  - '@@||ffzy1.tv^'
+  - '@@||91jpzyw.com^'
+  - '@@||xiangjiaozyw.com^'
+  - '@@||heiliaozyapi.com^'
+  - '@@||slapibf.com^'
+  - '@@||semaozy.net^'
+  - '@@||dadiapi.com^'
+  - '@@||fhapi9.com^'
+  - '@@||kxgav.com^'
+  - '@@||gdlsp.com^'
+  - '@@||xrbsp.com^'
+  - '@@||msnii.com^'
+  - '@@||apilsbzy1.com^'
+  - '@@||apiyutu.com^'
+  - '@@||jkunzyapi.com^'
+  - '@@||11bat.com^'
+  - '@@||lbapi9.com^'
+  - '@@||vnzyz.com^'
+  - '@@||naixxzy.com^'
 dhcp:
   enabled: false
   interface_name: ""
@@ -227,11 +259,11 @@ filtering:
   blocking_ipv6: ""
   blocked_services:
     schedule:
-      time_zone: Local
+      time_zone: UTC
     ids: []
   protection_disabled_until: null
   safe_search:
-    enabled: false
+    enabled: true
     bing: true
     duckduckgo: true
     ecosia: true
@@ -244,7 +276,7 @@ filtering:
   safebrowsing_block_host: standard-block.dns.adguard.com
   rewrites: []
   safe_fs_patterns:
-    - /opt/AdGuardHome/userfilters/*
+    - /usr/bin/data/userfilters/*
   safebrowsing_cache_size: 1048576
   safesearch_cache_size: 1048576
   parental_cache_size: 1048576
@@ -252,7 +284,6 @@ filtering:
   filters_update_interval: 24
   blocked_response_ttl: 10
   filtering_enabled: true
-  rewrites_enabled: true
   parental_enabled: false
   safebrowsing_enabled: false
   protection_enabled: true
@@ -260,7 +291,7 @@ clients:
   runtime_sources:
     whois: true
     arp: true
-    rdns: true
+    rdns: false
     dhcp: true
     hosts: true
   persistent: []
@@ -277,4 +308,4 @@ os:
   group: ""
   user: ""
   rlimit_nofile: 0
-schema_version: 34
+schema_version: 29

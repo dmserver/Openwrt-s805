@@ -100,7 +100,7 @@ jobs:
         uses: dmserver/maximize-build-space@master
         with:
           root-reserve-mb: 4096
-          swap-size-mb: 2048
+          swap-size-mb: 1024
           build-mount-path: /workdir
           overprovision-lvm: 'true'
           remove-dotnet: 'true'
