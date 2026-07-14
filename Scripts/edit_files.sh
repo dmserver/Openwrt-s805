@@ -19,6 +19,7 @@ fi
 		  
 if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 	echo "
+
 config interface 'loopback'
 	option proto 'static'
 	option ipaddr '127.0.0.1'
@@ -63,6 +64,9 @@ config interface 'wan6'
 	option reqprefix 'auto'
 	option norelease '1'
 	option sourcefilter '0'
+
+
+
 
 ">files/etc/config/network
 else
